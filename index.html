@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>משחק קוביה מתהפכת</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+        #welcome-screen {
+            display: none; /* מוסתר בהתחלה */
+            margin-top: 50px; /* רווח מלמעלה */
+        }
+        #game-screen {
+            display: none; /* מוסתר בהתחלה */
+        }
+        #summary-screen {
+            display: none; /* מוסתר בהתחלה */
+        }
+        .dice {
+            display: inline-block;
+            width: 100px;
+            height: 100px;
+            font-size: 60px; /* גודל אימוג'י */
+            line-height: 100px;
+            margin: 10px;
+            cursor: pointer;
+            transition: transform 0.5s; /* אנימציה של סיבוב */
+            border: 5px solid #007BFF; /* גבול ברירת מחדל */
+        }
+        .yellow-border {
+            border-color: yellow; /* גבול צהוב */
+        }
+        .selected {
+            position: relative;
+        }
+        .options {
+            margin-top: 20px;
+        }
+        .option {
+            display: inline-block;
+            margin: 5px;
+            padding: 10px 15px;
+            border: 2px solid #007BFF;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #e7f3ff;
+        }
+        .option:hover {
+            background-color: #d1e7ff;
+        }
+        .correct {
+            background-color: #c3e6cb; /* צבע לתשובה נכונה */
+        }
+        .incorrect {
+            background-color: #f5c6cb; /* צבע לתשובה שגויה */
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+            background-color: green; /* צבע ירוק */
+            color: white; /* טקסט לבן */
+            margin-left: 10px; /* רווח מהמלל */
+        }
+    </style>
+</head>
+<body>
+
+<div id="welcome-screen">
+    <h1>ברוך הבא למשחק לימוד חשבון! 🎉</h1>
+    <p>נא הכנס את שמך:</p>
+    <input type="text" id="name-input" placeholder="שמך כאן" style="padding: 10px; width: 200px;">
+    <button id="start-button" onclick="startGame()">התחל משחק</button>
+</div>
+
+<div id="game-screen">
+    <h1>משחק קוביה מתהפכת</h1>
+    <p id="welcome-message"></p>
+    <p id="attempt-message">ניסיון 1 מתוך 8</p> <!-- הודעה על הניסיון -->
+    <p id="roll-message">סובב את שני הקוביות!</p>
+
+    <div id="dice-container">
+        <div id="dice1" class="dice" onclick="rollDice()">🎲</div>
+        <div id="dice2" class="dice" onclick="rollDice()">🎲</div>
+    </div>
+
+    <div class="options" id="options-container"></div>
+
+    <p id="message"></p> <!-- הודעת התשובה -->
+</div>
+
+<div id="summary-screen">
+    <h1>סיכום המשחק</h1>
+    <p id="summary-message"></p>
+    <button onclick="restartGame()">התחל מחדש</button>
+</div>
+
+<script>
+let currentDiceValues = [1, 1]; // ערכים נוכחיים של הקוביות
+let attempts = 0; // מספר הניסיונות
+let correctAnswers = 0; // מספר התשובות הנכונות
+
+// הצגת עמוד הכניסה
+document.getElementById("welcome-screen").style.display = "block";
+
+function startGame() {
+    const nameInput = document.getElementById("name-input");
+    const name = nameInput.value.trim();
+
+    if (name) {
+        document.getElementById("welcome-message").innerText = `ברוך הבא, ${name}!`;
+        
+        // מעבר לעמוד המשחק
+        document.getElementById("welcome-screen").style.display = "none";
+        document.getElementById("game-screen").style.display = "block";
+        
+    } else {
+        alert("נא הכנס שם תקין.");
+    }
+}
+
+function rollDice() {
+    if (attempts >= 8) return; // אם הגיע למספר הניסיונות המרבי
+
+    // סיבוב שתי הקוביות
+    const diceElements = [document.getElementById('dice1'), document.getElementById('dice2')];
+
+    diceElements.forEach(dice => {
+        dice.style.transform = 'rotateY(180deg)';
+        
+        setTimeout(() => {
+            const newValue = Math.floor(Math.random() * 6) + 1; // מספר בין 1 ל-6
+            currentDiceValues[dice.id === 'dice1' ? 0 : 1] = newValue; // עדכון הערך הנוכחי
+            dice.innerText = getDiceEmoji(newValue); // עדכון האימוג'י בקוביה
+            dice.style.transform = 'rotateY(0deg)'; // החזרת הקוביה למצב המקורי
+            
+             // סימון הקוביה שנלחצה
+             dice.classList.add('selected');
+
+             if (dice === diceElements[1]) { // אם זו הקוביה השנייה
+                generateOptions(); // יצירת אפשרויות לאחר ששתי הקוביות הוטלו
+                
+                document.getElementById("roll-message").innerText = "בחר את התוצאה הנכונה!";
+                
+                // שינוי גבול הקוביות לצהוב לאחר הגלגול
+                document.querySelectorAll('.dice').forEach(dice => dice.classList.add('yellow-border'));
+                
+                // עדכון הודעת הניסיון 
+                document.getElementById("attempt-message").innerText = `ניסיון ${attempts + 1} מתוך 8`;
+                
+             }
+
+         }, 500); // זמן ההמתנה לסיבוב (חצי שנייה)
+     });
+}
+
+function getDiceEmoji(value) {
+   const diceEmojis = [
+       "⚀", // 1
+       "⚁", // 2
+       "⚂", // 3
+       "⚃", // 4
+       "⚄", // 5
+       "⚅"  // 6
+   ];
+   return diceEmojis[value - 1]; // החזרת האימוג'י המתאים לערך
+}
+
+function generateOptions() {
+   const optionsContainer = document.getElementById("options-container");
+   optionsContainer.innerHTML = ""; // ניקוי אפשרויות קודמות
+
+   const correctAnswer = currentDiceValues[0] + currentDiceValues[1]; // חיבור התוצאות
+   let options = new Set();
+   
+   options.add(correctAnswer); // הוספת תשובה נכונה
+
+   // הוספת תשובות שגויות עד ל-3 אפשרויות נוספות
+   while (options.size < 4) {
+       options.add(Math.floor(Math.random() * (12 - correctAnswer + 1)) + correctAnswer - Math.floor(Math.random() * (correctAnswer - 2))); 
+   }
+
+   options = Array.from(options).sort(() => Math.random() - 0.5); // ערבוב האפשרויות
+
+   options.forEach(option => {
+       const optionDiv = document.createElement("div");
+       optionDiv.classList.add("option");
+       optionDiv.innerText = option;
+
+       optionDiv.onclick = function() {
+           checkAnswer(option, correctAnswer);
+       };
+
+       optionsContainer.appendChild(optionDiv);
+   });
+}
+
+function checkAnswer(selected, correct) {
+   const message = document.getElementById("message");
+   
+   attempts++; // הגדלת מספר הניסיונות
+
+   if (parseInt(selected) === correct) {
+       message.innerHTML = "תשובה נכונה! ✔️😊"; // הוספת סימן וי לתשובה נכונה ואימוג'י מחייך 
+       message.className = "correct";
+       
+       correctAnswers++; // הגדלת מספר התשובות הנכונות
+
+   } else {
+       message.innerHTML = "תשובה שגויה! ❌"; // הוספת איקס לתשובה שגויה
+       message.className = "incorrect";
+       
+   }
+
+   if (attempts >= 8) { 
+       endGame(); 
+   } else { 
+       resetDiceBorders(); 
+   }
+}
+
+function resetDiceBorders() { 
+   document.querySelectorAll('.dice').forEach(dice => dice.classList.remove('yellow-border')); 
+}
+
+function endGame() {
+   document.getElementById("game-screen").style.display = "none"; 
+   document.getElementById("summary-message").innerText =
+       `סיימת את המשחק! ענית נכון על ${correctAnswers} מתוך ${attempts} ניסיונות.`;
+   document.getElementById("summary-screen").style.display = "block"; 
+}
+
+function restartGame() { 
+   currentDiceValues = [1, 1]; 
+   attempts = 0; 
+   correctAnswers = 0; 
+
+   document.getElementById("options-container").innerHTML = ""; 
+   document.getElementById("message").innerText = ""; 
+   document.getElementById("summary-screen").style.display = "none"; 
+
+   startGame(); 
+}
+</script>
+
+</body>
+</html>
